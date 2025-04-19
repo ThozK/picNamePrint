@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>写真まとめ</title>
+  <style>
+    /* --- 基本スタイル --- */
+    :root {
+      /* ★ 緑基調に変更 */
+      --primary-color: #198754; /* 濃いめの緑 (Bootstrap Success) */
+      --primary-hover-color: #157347; /* さらに濃い緑 */
+      --light-bg: #f8f9fa;
+      --border-color: #dee2e6;
+      --text-color: #212529;
+      --secondary-text-color: #6c757d;
+      --danger-color: #dc3545;
+      --danger-hover-color: #c82333;
+      --white-color: #ffffff;
+      --input-bg: #ffffff;
+      --input-border: #ced4da;
+      /* ★ フォーカスリングも緑系に */
+      --focus-ring-color: rgba(25, 135, 84, 0.25);
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif; /* Google Fontsが読み込まれていない場合は別途追加が必要 */
+      margin: 0;
+      padding: 30px;
+      background-color: var(--light-bg);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    h1 {
+      color: var(--primary-color); /* 自動的に緑に */
+      margin-bottom: 30px;
+      font-weight: 700;
+      text-align: center;
+    }
+    h3 {
+      color: var(--primary-color); /* 自動的に緑に */
+      margin-bottom: 30px;
+      font-weight: 300;
+      text-align: center;
+    }
+
+    /* --- コントロールエリア --- */
+    #controls {
+      background-color: var(--white-color);
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px 20px; /* 縦横のギャップ */
+      align-items: center;
+    }
+
+    #controls label {
+      display: inline-flex; /* ラベルと入力要素を横並び */
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--secondary-text-color);
+    }
+
+    #controls input[type="text"],
+    #controls select {
+      padding: 8px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: var(--input-bg);
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    #controls input[type="text"] {
+        min-width: 200px; /* タイトル入力欄の幅 */
+    }
+
+    #controls input[type="text"]:focus,
+    #controls select:focus {
+      border-color: var(--primary-color); /* 自動的に緑に */
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem var(--focus-ring-color); /* 自動的に緑系のリングに */
+    }
+
+    /* --- ボタン共通スタイル --- */
+    button {
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      /* ★ 枠線用のスペースを確保 */
+      border: 1px solid transparent;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; /* transitionにcolorとborder-color追加 */
+      background-color: var(--primary-color); /* デフォルトは緑 */
+      color: var(--white-color);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    button:hover:not(:disabled) {
+      background-color: var(--primary-hover-color); /* デフォルトのホバー */
+      border-color: var(--primary-hover-color); /* 枠線色も合わせる */
+      color: var(--white-color); /* 文字色は白のまま */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    button:disabled {
+      background-color: #adb5bd;
+      border-color: #adb5bd; /* disabled時も枠線色 */
+      color: var(--white-color); /* disabled時の文字色 */
+      cursor: not-allowed;
+      opacity: 0.7;
+      box-shadow: none;
+    }
+
+    /* 個別ボタン調整 */
+    #clearAll {
+        background-color: var(--secondary-text-color);
+        border-color: var(--secondary-text-color); /* 枠線色も合わせる */
+        color: var(--white-color);
+    }
+    #clearAll:hover:not(:disabled) {
+        background-color: #5a6268;
+        border-color: #5a6268;
+        color: var(--white-color);
+    }
+
+    /* ★ ソートボタンを目立たないように（アウトライン風） */
+    #sortByNameButton {
+        background-color: var(--white-color); /* 背景を白に */
+        color: var(--primary-color);          /* 文字色を緑に */
+        border-color: var(--primary-color);   /* 枠線の色を緑に */
+    }
+    #sortByNameButton:hover:not(:disabled) {
+        background-color: #f5f7f6; /* ホバーで背景を緑に */
+    }
+
+    /* ★ ダウンロードボタンはデフォルトのスタイル（緑塗りつぶし）が適用される */
+    /* #downloadButton の個別指定は不要 */
+
+
+    /* --- ドロップゾーン --- */
+    #dropZone {
+      border: 2px dashed var(--primary-color); /* 自動的に緑の破線に */
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 30px;
+      cursor: pointer;
+      border-radius: 8px;
+      background-color: var(--white-color);
+      color: var(--secondary-text-color);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    #dropZone:hover {
+      /* ★ ホバー時の背景を薄い緑に */
+      background-color: #e8f5e9;
+      border-color: var(--primary-hover-color); /* 自動的に濃い緑の破線に */
+    }
+
+    /* --- プレビューエリア --- */
+    #previewArea {
+      display: grid;
+      gap: 15px;
+      padding: 20px;
+      background: #e9ecef; /* 少し濃い背景 */
+      min-height: 150px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      grid-auto-rows: min-content;
+      max-width: 100%; /* 幅を親要素に合わせる */
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    /* --- 画像コンテナ --- */
+    .image-container {
+      text-align: center;
+      position: relative; /* ★ 削除ボタンの基準位置 */
+      border: 1px solid var(--border-color);
+      background-color: var(--white-color);
+      cursor: grab;
+      overflow: hidden;
+      padding: 10px 10px 5px 10px; /* パディング調整 */
+      box-sizing: border-box;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      transition: box-shadow 0.2s ease;
+    }
+    .image-container:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .image-container:active {
+        cursor: grabbing;
+    }
+    .image-container.dragging {
+        opacity: 0.5;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .image-container img {
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 8px auto; /* 下マージン調整 */
+      flex-grow: 1;
+      min-height: 100px;
+      border-radius: 4px; /* 画像の角も少し丸める */
+    }
+
+    /* --- ファイル名表示/入力 --- */
+    .filename {
+      padding: 0 2px 2px 2px;
+      font-size: 13px; /* 少し大きく */
+      overflow-wrap: break-word;
+      word-break: break-all;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      min-height: 1.4em; /* line-heightに合わせて調整 */
+      line-height: 1.4;
+      flex-shrink: 0;
+      color: var(--secondary-text-color);
+    }
+    .filename input {
+      width: calc(100% - 4px);
+      border: 1px solid transparent; /* 通常時は非表示 */
+      font-size: 13px;
+      text-align: center;
+      background: transparent;
+      box-sizing: border-box;
+      padding: 2px 0; /* 少しパディング */
+      margin: 0;
+      line-height: 1.4;
+      border-radius: 3px;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    .filename input:hover {
+        border-color: #eee; /* ホバーで薄く表示 */
+    }
+    .filename input:focus {
+      outline: none;
+      border: 1px solid var(--primary-color); /* 自動的に緑に */
+      background: var(--white-color);
+      box-shadow: 0 0 0 0.1rem var(--focus-ring-color); /* 自動的に緑系のリングに */
+    }
+    .filename span.display-text {
+        display: none;
+        font-size: 13px;
+        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 2px 0;
+        margin: 0;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    /* --- キャプチャ時スタイル --- */
+    .capture-container { /* ★ セレクタ名を修正 */
+        border: none !important; /* ★ PDF出力時の枠線を強制的に削除 */
+    }
+    .capture-container .filename input {
+        display: none;
+    }
+    .capture-container .filename span.display-text {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .capture-container .remove-btn {
+        display: none;
+    }
+
+    /* --- 削除ボタン --- */
+    .remove-btn {
+      position: absolute;
+      top: 5px; /* ★ 位置調整 (例: 5px) */
+      right: 5px; /* ★ 位置調整 (例: 5px) */
+      background: var(--danger-color);
+      color: white;
+      border: none; /* 削除ボタンは枠線なし */
+      border-radius: 10%; /* 丸に戻す */
+      cursor: pointer;
+      font-size: 11px; /* 少し小さく */
+      width: 22px; /* サイズ調整 */
+      height: 22px; /* サイズ調整 */
+      line-height: 0px; /* 中央揃え */
+      text-align: center;
+      font-weight: bold;
+      z-index: 1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .remove-btn:hover {
+        background: var(--danger-hover-color);
+        transform: scale(1.1);
+    }
+
+    /* --- 進捗表示 --- */
+    #progress {
+      margin-top: 15px;
+      font-weight: 500;
+      min-height: 1.4em;
+      color: var(--primary-color); /* 自動的に緑に */
+      text-align: center; /* 中央揃え */
+      width: 100%; /* コントロールエリア内で幅いっぱい */
+      font-size: 14px;
+    }
+  </style>
+
+
+
+</head>
+<body>
+  <h1>写真まとめたPDFをつくるアプリ</h1>
+  <h3>写真の下にはファイル名が表示されます。</h3>
+  <div id="dropZone" onclick="document.getElementById('fileInput').click();">
+    ここに画像をドラッグ＆ドロップ または クリックしてファイルを選択
+  </div>
+  <div id="controls">
+    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    <!-- <button type="button" onclick="document.getElementById('fileInput').click();">ファイルを選択</button> -->
+    <!-- <br><br> -->
+    <label>ファイル名(タイトル): <input type="text" id="pdfTitle" placeholder="ファイル名(タイトル)を入力"></label><br><br>
+    <label>画質(解像度):
+      <select id="quality">
+        <option value="1">標準 (1x)</option>
+        <option value="2" selected>高 (2x)</option>
+        <option value="3">最高 (3x)</option>
+      </select>
+    </label><br><br>
+    <label>1ページあたりの行数: <!-- ラベル変更 -->
+      <select id="rowCount">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+      </select>
+    </label>
+    <label>1ページあたりの列数: <!-- ラベル変更 -->
+      <select id="colCount">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </label>
+    <button id="sortByNameButton">名前順にソート</button>
+    <button id="downloadButton">PDFをダウンロード</button>
+    <button id="clearAll">すべてクリア</button>
+    <div id="progress"></div>
+  </div>
+
+
+
+  <div id="previewArea"></div>
+
+  <!-- ライブラリ読み込み -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const previewArea = document.getElementById('previewArea');
+    const rowCountSelect = document.getElementById('rowCount');
+    const colCountSelect = document.getElementById('colCount');
+    const downloadButton = document.getElementById('downloadButton');
+    const clearAllButton = document.getElementById('clearAll');
+    const pdfTitleInput = document.getElementById('pdfTitle');
+    const qualitySelect = document.getElementById('quality');
+    const progressDiv = document.getElementById('progress');
+    const sortByNameButton = document.getElementById('sortByNameButton');
+
+    const { PDFDocument, rgb, StandardFonts, PageSizes } = PDFLib; // PageSizes を追加
+
+    let draggedElement = null;
+
+    function updateGridLayout() {
+      const cols = parseInt(colCountSelect.value);
+      previewArea.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      // 行数に応じてプレビューエリアのグリッドの高さを調整（オプション）
+      // const rows = parseInt(rowCountSelect.value);
+      // previewArea.style.gridTemplateRows = `repeat(${rows}, auto)`; // autoだと内容に依存
+    }
+
+    function handleFiles(files) {
+      const fileList = [...files].filter(file => file.type.startsWith('image/'));
+      fileList.sort((a, b) => a.name.localeCompare(b.name, 'ja', { numeric: true }));
+      fileList.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => addImagePreview(e.target.result, file.name);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function addImagePreview(src, filename) {
+      const container = document.createElement('div');
+      container.className = 'image-container';
+      container.draggable = true;
+
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = filename;
+      // 画像読み込み完了後に高さを調整する（より正確なレイアウトのため）
+      img.onload = () => {
+          // 必要であればここでコンテナの高さを再計算・調整
+      };
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = filename;
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+      input.addEventListener('input', (e) => {
+          const span = container.querySelector('.filename span.display-text');
+          if (span) {
+              span.textContent = e.target.value;
+          }
+          img.alt = e.target.value;
+      });
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'filename';
+
+      const span = document.createElement('span');
+      span.className = 'display-text';
+      span.textContent = filename;
+
+      wrapper.appendChild(input);
+      wrapper.appendChild(span);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '×';
+      removeBtn.className = 'remove-btn';
+      removeBtn.title = '削除';
+      removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          container.remove();
+      };
+
+      container.appendChild(removeBtn);
+      container.appendChild(img); // img を先に追加
+      container.appendChild(wrapper); // filename を後に追加
+
+      // Drag & Drop イベントリスナー
+      container.addEventListener('dragstart', e => {
+        draggedElement = container;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => { container.classList.add('dragging'); }, 0);
+      });
+      container.addEventListener('dragend', e => {
+        if (draggedElement) { draggedElement.classList.remove('dragging'); }
+        draggedElement = null;
+      });
+      container.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      container.addEventListener('drop', e => {
+        e.preventDefault();
+        if (draggedElement && draggedElement !== container) {
+            const parent = previewArea;
+            const allItems = [...parent.children];
+            const draggedIndex = allItems.indexOf(draggedElement);
+            const targetIndex = allItems.indexOf(container);
+            if (draggedIndex < targetIndex) {
+                parent.insertBefore(draggedElement, container.nextSibling);
+            } else {
+                parent.insertBefore(draggedElement, container);
+            }
+        }
+      });
+
+      previewArea.appendChild(container);
+    }
+
+    // --- DropZone イベントリスナー ---
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.backgroundColor = '#eef'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = ''; });
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.style.backgroundColor = '';
+      if (e.dataTransfer.files) { handleFiles(e.dataTransfer.files); }
+    });
+
+    // --- ファイル入力イベントリスナー ---
+    fileInput.addEventListener('change', e => {
+      if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; }
+    });
+
+    // --- グリッドレイアウト変更 (列数のみ更新) ---
+    colCountSelect.addEventListener('change', updateGridLayout);
+    // 行数変更時もグリッド更新（プレビューの見た目調整用、PDF生成ロジックには直接影響しない）
+    rowCountSelect.addEventListener('change', updateGridLayout);
+
+
+    // --- クリアボタン ---
+    clearAllButton.addEventListener('click', () => {
+      previewArea.innerHTML = '';
+      progressDiv.textContent = '';
+    });
+
+    // --- 初期化 ---
+    updateGridLayout();
+
+    // --- 名前順ソートボタン ---
+    sortByNameButton.addEventListener('click', () => {
+      const containers = [...previewArea.children];
+      if (containers.length < 2) return;
+      containers.sort((a, b) => {
+        const nameAInput = a.querySelector('.filename input');
+        const nameBInput = b.querySelector('.filename input');
+        const nameA = (nameAInput ? nameAInput.value : a.querySelector('img')?.alt || '').toLowerCase();
+        const nameB = (nameBInput ? nameBInput.value : b.querySelector('img')?.alt || '').toLowerCase();
+        return nameA.localeCompare(nameB, 'ja', { numeric: true });
+      });
+      containers.forEach(container => { previewArea.appendChild(container); });
+      progressDiv.textContent = '名前順にソートしました。';
+    });
+
+    // --- PDFダウンロードボタン (A4, 複数ページ対応) ---
+    downloadButton.addEventListener('click', async () => {
+      const originalContainers = [...previewArea.children];
+      if (originalContainers.length === 0) {
+          alert('画像がありません。');
+          return;
+      }
+
+      downloadButton.textContent = 'PDF生成中...';
+      downloadButton.disabled = true;
+      clearAllButton.disabled = true;
+      sortByNameButton.disabled = true;
+      progressDiv.textContent = 'PDF生成準備中...';
+
+      const rowCount = parseInt(rowCountSelect.value);
+      const colCount = parseInt(colCountSelect.value);
+      const quality = parseInt(qualitySelect.value);
+      const scale = quality;
+      const title = pdfTitleInput.value; // 入力されたタイトルを取得
+      const itemsPerPage = rowCount * colCount;
+
+      const A4_WIDTH = PageSizes.A4[0];
+      const A4_HEIGHT = PageSizes.A4[1];
+      const MARGIN = 20;
+      // const TITLE_SPACE = 30; // pdf-libでのタイトルスペースは不要に
+      // const FONT_SIZE = 12;   // pdf-libでのフォントサイズは不要に
+
+      const pdfDoc = await PDFDocument.create();
+      // const titleFont = await pdfDoc.embedFont(StandardFonts.Helvetica); // pdf-libでのフォント埋め込みは不要に
+
+      const totalPages = Math.ceil(originalContainers.length / itemsPerPage);
+      // let captureTarget = null; // pageWrapper を使うので不要になるか、役割が変わる
+      let pageWrapper = null; // ★追加: ページ全体をラップする要素
+
+      try {
+        for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+          const startIndex = pageIndex * itemsPerPage;
+          const endIndex = Math.min(startIndex + itemsPerPage, originalContainers.length);
+          const pageItems = originalContainers.slice(startIndex, endIndex);
+
+          progressDiv.textContent = `ページ ${pageIndex + 1}/${totalPages}: 一時要素を作成中...`;
+
+          // --- ★変更: 1. ページ全体のラッパー要素を作成 ---
+          pageWrapper = document.createElement('div');
+          pageWrapper.style.position = 'absolute';
+          pageWrapper.style.left = '-9999px';
+          pageWrapper.style.top = '0';
+          pageWrapper.style.backgroundColor = '#ffffff'; // PDFの背景色
+          pageWrapper.style.padding = '20px'; // PDFのマージンに相当するパディング
+          pageWrapper.style.width = '1000px'; // キャプチャ時の基準幅 (A4比率でなくても良い)
+          pageWrapper.style.boxSizing = 'border-box';
+          pageWrapper.style.display = 'flex'; // タイトルとグリッドを縦に並べる
+          pageWrapper.style.flexDirection = 'column';
+          pageWrapper.style.gap = '15px'; // タイトルとグリッドの間隔
+
+          // --- ★追加: 1a. タイトル要素を作成してラッパーに追加 ---
+          if (title) {
+              const titleElement = document.createElement('div');
+              titleElement.textContent = title;
+              titleElement.style.fontSize = '16px'; // タイトルの見た目を調整
+              titleElement.style.fontWeight = 'bold';
+              titleElement.style.textAlign = 'center';
+              titleElement.style.color = '#000000';
+              titleElement.style.fontFamily = "'Noto Sans JP', sans-serif"; // CSSで指定したフォントを使う
+              titleElement.style.paddingBottom = '10px'; // タイトル下の余白
+              titleElement.style.borderBottom = '1px solid #ccc'; // 区切り線など（任意）
+              titleElement.style.flexShrink = '0'; // タイトルが縮まないように
+              pageWrapper.appendChild(titleElement);
+          }
+
+          // --- ★変更: 1b. 画像グリッド用コンテナを作成 (旧 captureTarget) ---
+          const gridContainer = document.createElement('div');
+          gridContainer.style.display = 'grid';
+          gridContainer.style.gridTemplateColumns = `repeat(${colCount}, 1fr)`;
+          gridContainer.style.gridAutoRows = 'auto';
+          gridContainer.style.alignItems = 'start';
+          gridContainer.style.gap = '10px';
+          // gridContainer.style.padding = '10px'; // ラッパーにパディングがあるので不要かも
+          gridContainer.style.width = '100%'; // ラッパーの幅に合わせる
+          gridContainer.style.boxSizing = 'border-box';
+          gridContainer.style.flexGrow = '1'; // 残りのスペースを埋める
+
+          // --- 2. 画像コンテナをクローンしてグリッドコンテナに追加 ---
+          pageItems.forEach(originalContainer => {
+            const clonedContainer = originalContainer.cloneNode(true);
+            const input = clonedContainer.querySelector('.filename input');
+            const span = clonedContainer.querySelector('.filename span.display-text');
+            if (input && span) {
+              span.textContent = input.value;
+              // ★★★ 修正箇所: キャプチャ用ファイル名SPANのスタイル設定 ★★★
+              span.style.backgroundColor = '#ffffff'; // 背景を白に設定
+              span.style.display = 'inline-block'; // キャプチャ時に表示されるように明示
+              span.style.width = '100%'; // 幅をコンテナに合わせる
+              span.style.padding = '2px 4px'; // 左右にも少しパディングを追加
+              span.style.boxSizing = 'border-box'; // パディングを含めて幅100%
+              span.style.textAlign = 'center'; // 中央揃えを維持
+              span.style.color = 'var(--text-color)'; // 文字色を基本テキスト色に（CSS変数があれば使う）
+              span.style.fontSize = '16px'; // フォントサイズを少し調整（任意）
+              span.style.lineHeight = '1.4'; // 行の高さを調整
+              // ★★★ 修正箇所ここまで ★★★
+            }
+            clonedContainer.classList.add('capture-container'); // CSSでinputを隠しspanを表示させるトリガー
+            clonedContainer.removeAttribute('draggable');
+            clonedContainer.style.height = 'auto';
+            clonedContainer.style.display = 'flex';
+            clonedContainer.style.flexDirection = 'column';
+
+            // クローン要素内の画像スタイル調整
+            const imgElement = clonedContainer.querySelector('img');
+            if (imgElement) {
+                imgElement.style.maxHeight = 'none';
+                imgElement.style.height = 'auto';
+                imgElement.style.width = 'auto';
+                imgElement.style.maxWidth = '100%';
+                imgElement.style.objectFit = 'contain';
+                imgElement.style.flexGrow = '1';
+                imgElement.style.minHeight = '100px'; // 最小高さを維持（レイアウト安定のため）
+                imgElement.style.marginBottom = '5px'; // 画像とファイル名の間に少しマージン
+            }
+            gridContainer.appendChild(clonedContainer); // gridContainer に追加
+          });
+
+
+          pageWrapper.appendChild(gridContainer); // グリッドコンテナをラッパーに追加
+          document.body.appendChild(pageWrapper); // ラッパー要素をbodyに追加
+
+          // レンダリング待機
+          await new Promise(resolve => setTimeout(resolve, 250)); // 少し長めに待つ場合も
+
+          progressDiv.textContent = `ページ ${pageIndex + 1}/${totalPages}: 画像をレンダリング中 (html2canvas)...`;
+          // --- ★変更: 3. ラッパー要素全体を html2canvas でキャプチャ ---
+          const canvas = await html2canvas(pageWrapper, { // 対象を pageWrapper に変更
+            scale: scale,
+            backgroundColor: '#ffffff', // キャプチャ時の背景色
+            useCORS: true,
+            logging: false,
+            windowWidth: pageWrapper.scrollWidth,
+            windowHeight: pageWrapper.scrollHeight
+          });
+
+          pageWrapper.remove(); // キャプチャが終わったらラッパー要素を削除
+          pageWrapper = null;
+
+          progressDiv.textContent = `ページ ${pageIndex + 1}/${totalPages}: PDFページに追加中 (pdf-lib)...`;
+          // --- 4. キャンバスからPNGデータを取得 ---
+          const pngDataUrl = canvas.toDataURL('image/png');
+          const pngImageBytes = await fetch(pngDataUrl).then(res => res.arrayBuffer());
+
+          // --- ★変更: 5. pdf-lib でページを追加し、キャプチャした画像を描画 ---
+          const pngImage = await pdfDoc.embedPng(pngImageBytes);
+          const pngDims = pngImage.scale(1); // キャプチャ画像のピクセルサイズ
+
+          // ★変更: 画像描画領域の計算 (マージンのみ考慮)
+          const availableWidth = A4_WIDTH - MARGIN * 2;
+          const availableHeight = A4_HEIGHT - MARGIN * 2; // タイトルスペースは不要
+
+          // アスペクト比を維持してスケーリング
+          const scaleFactor = Math.min(availableWidth / pngDims.width, availableHeight / pngDims.height);
+          const scaledWidth = pngDims.width * scaleFactor;
+          const scaledHeight = pngDims.height * scaleFactor;
+
+          // 画像描画位置の計算 (中央揃え、上寄せ)
+          const imageX = MARGIN + (availableWidth - scaledWidth) / 2;
+          const imageY = A4_HEIGHT - MARGIN - scaledHeight; // 上端から配置
+
+          // 新しいA4ページを追加
+          const page = pdfDoc.addPage(PageSizes.A4);
+
+          // ★削除: pdf-libでのタイトル描画は不要
+          // if (title) { ... page.drawText(...) ... }
+
+          // ページにPNG画像を描画 (タイトルごとキャプチャされた画像)
+          page.drawImage(pngImage, {
+            x: imageX,
+            y: imageY,
+            width: scaledWidth,
+            height: scaledHeight,
+          });
+
+        } // end of page loop
+
+        progressDiv.textContent = 'PDFを保存中...';
+        // --- 6. PDFをバイト配列として保存 ---
+        const pdfBytes = await pdfDoc.save();
+
+        // --- 7. PDFダウンロード処理 ---
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        const safePdfFileName = title.replace(/[^a-zA-Z0-9\u3040-\u30FF\uFF65-\uFF9F\u4E00-\u9FAF_-]/g, '_').trim();
+        link.download = safePdfFileName ? `${safePdfFileName}.pdf` : 'image_layout_A4.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+
+        progressDiv.textContent = `完了！ ${totalPages}ページのPDFファイルを保存しました。`;
+
+      } catch (error) {
+        console.error('PDF生成中にエラーが発生しました:', error);
+        progressDiv.textContent = 'エラーが発生しました。コンソールを確認してください。';
+        alert('PDF生成中にエラーが発生しました。');
+      } finally {
+        // --- 8. 後処理 ---
+        if (pageWrapper && document.body.contains(pageWrapper)) { // pageWrapper を確認
+          pageWrapper.remove();
+        }
+        downloadButton.textContent = 'PDFでダウンロード (A4)';
+        downloadButton.disabled = false;
+        clearAllButton.disabled = false;
+        sortByNameButton.disabled = false;
+      }
+    });
+
+
+  </script>
+
+</body>
+</html>
